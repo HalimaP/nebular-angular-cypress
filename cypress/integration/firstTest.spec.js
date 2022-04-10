@@ -92,6 +92,8 @@ it.only('invoke command', () => {
     cy.contains('Form Layouts').click()
     // 1 example
     cy.get('[for="exampleInputEmail1"]').should('contain', 'Email address')
+    .should('have.class', 'label')
+    .and('have.text', 'Email address')
     // example 2
     // U ovom primjeru koristimo jquery formu, koristimo then-jquery funkciju, u parametar 
     // label pohranjujemo web element for="exampleInputEmail1" i onda pravimo tvrdnju da
@@ -101,6 +103,9 @@ it.only('invoke command', () => {
     // a u trecem cypress metode
     cy.get('[for="exampleInputEmail1"]').then(label => {
         expect(label.text()).to.equal('Email address')
+        expect(label).to.have.class('label')
+        expect(label).to.have.text('Email address')
+
     })
     // example3
     cy.get('[for="exampleInputEmail1"]').invoke('text').then(text => {
@@ -118,13 +123,34 @@ it.only('invoke command', () => {
 
 })
 it.only('assert property', () => {
+    function selectDateFromCurrent(day){
+        let date = new Date()
+        date.setDate(date.getDate() + day)
+        let futureDay = date.getDate()
+        let futureMonth = date.toLocaleString('default', {month:'short'})
+        let dateAssert = futureMonth +' '+futureDay+', '+date.getFullYear()
+        cy.get('nb-calendar-navigation').invoke('attr', 'ng-reflect-date').then(dateAttribute =>{
+            if(!dateAttribute.includes(futureMonth)){
+                cy.get('[data-name="chevron-right"]').click()
+                selectDateFromCurrent(day)
+                // cy.get('nb-calendar-day-picker [class="day-cell ng-star-inserted"]').contains(futureDay).click()
+            }else{
+                cy.get('nb-calendar-day-picker [class="day-cell ng-star-inserted"]').contains(futureDay).click()
+            }
+        })
+        return dateAssert
+    }
     cy.visit('/')
     cy.contains('Forms').click()
     cy.contains('Datepicker').click()
+   
     cy.contains('nb-card', 'Common Datepicker').find('input').then(input =>{
         cy.wrap(input).click()
-        cy.get('nb-calendar-day-picker').contains('17').click()
-        cy.wrap(input).invoke('prop', 'value').should('contain', 'Apr 17, 2022' )
+        let dateAssert = selectDateFromCurrent(5)
+
+      
+        // cy.get('nb-calendar-day-picker').contains('17').click()
+        cy.wrap(input).invoke('prop', 'value').should('contain', dateAssert )
     })
    
 })
@@ -226,6 +252,38 @@ it.only('Web tables', () => {
         })
     })
     
+})
+it.only('tooltip', () => {
+    cy.visit('/')
+    cy.contains('Modal & Overlays').click()
+    cy.contains('Tooltip').click()
+    cy.contains('nb-card', 'Colored Tooltips')
+    .contains('Default').click()
+    cy.get('nb-tooltip').should('contain', 'This is a tooltip')
+})
+it.only('dialog box', () =>{
+    cy.visit('/')
+    cy.contains('Tables & Data').click()
+    cy.contains('Smart Table').click()
+    // Ovdje je slucaj da zelimo vidjeti alert message kada kliknemo na trash button
+    // cy.get('tbody tr').first().find('.nb-trash').click()
+    // Sa primjerom iznad ne mozemo vidjeti Popup message iz razloga sto alert ne pripada 
+    // HTML DOM nego je dio browsera i u primjeru ispod mozemo vidjeti kako mozemo to uraditi
+    // cy.on('window:confirm', (confirm) => {
+    //     expect(confirm).to.equal('Are you sure you want to delete?')
+    // })
+    // 2
+    // const stub = cy.stub()
+    // cy.on('window:confirm', stub)
+    // cy.get('tbody tr').first().find('.nb-trash').click().then(()=>{
+    //     expect(stub.getCall(0)).to.be.calledWith('Are you sure you want to delete?')
+
+    // })
+    // primjer ispod je nacin da kliknemo na cancel kako se ne bi obrisao jedan red cancel iz confirmation boxa
+    cy.get('tbody tr').first().find('.nb-trash').click()
+    cy.on('window:confirm', () =>{
+
+    })
 })
 
 })
